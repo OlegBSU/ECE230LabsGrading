@@ -115,13 +115,13 @@ demux1_4_8bit data_router(
 
 // Enable demultiplexer
 
-demux1_4_8bit enable_router(
-.In(store),
-.Sel(addr),
-.Y0(e0),
-.Y1(e1),
-.Y2(e2),
-.Y3(e3)
+demux1_4_1bit enable_router(
+    .In(store),
+    .Sel(addr),
+    .Y0(e0),
+    .Y1(e1),
+    .Y2(e2),
+    .Y3(e3)
 );
 
 //  4 8-bit wide D-latch blocks
