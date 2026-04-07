@@ -7,6 +7,10 @@ module D_flip_flop(
     output notQ
 );
 
+initial begin
+    Q = 1'b0;
+end
+
 always @(posedge clk or posedge RST) begin
     if (RST)
         Q <= 1'b0;
@@ -20,9 +24,12 @@ endmodule
 
 
 // Full Adder
-module full_adder (
-    input A, B, Cin,
-    output Y, Cout
+module full_adder(
+    input A,
+    input B,
+    input Cin,
+    output Y,
+    output Cout
 );
 
 assign Y    = A ^ B ^ Cin;
@@ -41,7 +48,12 @@ module T_flip_flop(
 );
 
 wire D;
-assign D = T ^ Q;   // hold when T=0, toggle when T=1
+
+initial begin
+    Q = 1'b0;
+end
+
+assign D = (T == 1'b0) ? Q : ~Q;
 
 always @(posedge clk or posedge RST) begin
     if (RST)
@@ -55,15 +67,13 @@ assign notQ = ~Q;
 endmodule
 
 
-module top (
+module top(
     input btnU,
     input btnC,
     output [6:0] led
 );
 
-//
-// Ripple counter using T flip-flops
-//
+
 wire [2:0] w;
 
 T_flip_flop f1(
@@ -93,25 +103,20 @@ T_flip_flop f3(
 assign led[2:0] = w[2:0];
 
 
-//
-// Modulo-6 counter
-//
-wire [2:0] SUMW;   // adder output = Q + 1
-wire [2:0] DW;     // actual D inputs to the counter FFs
-wire [2:0] QW;     // current counter state
-wire [1:0] CW;     // carry wires
+wire [2:0] DW;        
+wire [2:0] QW;      
+wire [1:0] CW;      
+wire [2:0] NEXT;    
+wire MOD_HIT;        
+wire MC_D;            
+wire MC_Q;          
 
-// Detect count = 5 (binary 101)
-// On next clock: reset count to 000 and toggle led[6]
-wire HIT5;
-assign HIT5 = QW[2] & ~QW[1] & QW[0];
-
-// 3-bit incrementer: QW + 1
+// Add 1 to current counter value
 full_adder FA0(
     .A(QW[0]),
     .B(1'b1),
     .Cin(1'b0),
-    .Y(SUMW[0]),
+    .Y(DW[0]),
     .Cout(CW[0])
 );
 
@@ -119,7 +124,7 @@ full_adder FA1(
     .A(QW[1]),
     .B(1'b0),
     .Cin(CW[0]),
-    .Y(SUMW[1]),
+    .Y(DW[1]),
     .Cout(CW[1])
 );
 
@@ -127,25 +132,18 @@ full_adder FA2(
     .A(QW[2]),
     .B(1'b0),
     .Cin(CW[1]),
-    .Y(SUMW[2]),
+    .Y(DW[2]),
     .Cout()
 );
 
-// If state is 5, next state becomes 000.
-// Otherwise next state is Q + 1.
-// stuff below cab be used too but DW has to be reg istead of wire
-//always @(*) begin
-//    if (HIT5)
-//        DW = 3'b000;
-//    else
-//        DW = SUMW;
-//end
+assign MOD_HIT = QW[2] & QW[1] & ~QW[0];
 
-assign DW = HIT5 ? 3'b000 : SUMW;
+assign NEXT = MOD_HIT ? 3'b000 : DW;
 
+// State flip-flops
 D_flip_flop D0(
     .RST(btnU),
-    .D(DW[0]),
+    .D(NEXT[0]),
     .clk(btnC),
     .Q(QW[0]),
     .notQ()
@@ -153,7 +151,7 @@ D_flip_flop D0(
 
 D_flip_flop D1(
     .RST(btnU),
-    .D(DW[1]),
+    .D(NEXT[1]),
     .clk(btnC),
     .Q(QW[1]),
     .notQ()
@@ -161,32 +159,24 @@ D_flip_flop D1(
 
 D_flip_flop D2(
     .RST(btnU),
-    .D(DW[2]),
+    .D(NEXT[2]),
     .clk(btnC),
     .Q(QW[2]),
     .notQ()
 );
 
-assign led[5:3] = QW[2:0];
 
-
-//
-// Modulo counter output on led[6]
-// Toggle when count reaches 5
-//
-wire OUTQ;
-wire OUTD;
-
-assign OUTD = HIT5 ? ~OUTQ : OUTQ;
+assign MC_D = MOD_HIT ? ~MC_Q : MC_Q;
 
 D_flip_flop OUT(
     .RST(btnU),
-    .D(OUTD),
+    .D(MC_D),
     .clk(btnC),
-    .Q(OUTQ),
+    .Q(MC_Q),
     .notQ()
 );
 
-assign led[6] = OUTQ;
+assign led[5:3] = QW[2:0];
+assign led[6]   = MC_Q;
 
 endmodule
