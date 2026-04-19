@@ -8,6 +8,7 @@ module top
     output [6:0] seg     //Outputs for 7-segment display
 );
 
+
 /******** DO NOT MODIFY ********/
 wire clk_1Hz;       //Generate Internal 1Hz Clock
 wire btnC_1Hz;     //Stretch load signal
@@ -33,11 +34,6 @@ end
 seven_segment_inf seven_segment_inf_inst (.clk(clk), .rst(btnC), .count(count) , .anode(an), .segs(seg));
 /********************************/
 
-/******** UNCOMMENT & UPDATE THIS SECTION ********/
-//wire "count" feeds in count value to seven segment display. This should be a 6-bit value
-//This will decide if seven segment display shows stopwatch count or timer count
-//wire [5:0] count = ;
-
 /******** UPDATE THIS SECTION ********/
 /******* INITIALIZE STOPWATCH AND TIMER MODULE ***********/
 // Control signals
@@ -50,8 +46,49 @@ wire [5:0] load_value = sw[15:10];      //Set Timer Value (Value to load in time
 //Use "clk_1Hz" as clock signal to stopwatch and timer modules
 
 
+wire [5:0] stopwatch_cnt; // stopwatch 6-bit bus output
+wire[5:0] tmr_cnt; // timer 6-bit buss output
+
+
+wire[5:0] count; // Output to 7-seg dspl interface
+assign count = mode? tmr_cnt : stopwatch_cnt; // Mux using ternary operator
+
+
+// LED outputs
+assign led[8:3]   = stopwatch_cnt;
+assign led[15:10] = tmr_cnt;
+
+
+// Stopwatch Instance
+wire stopwatch_en = ~mode & run;
+stopwatch stpw(
+    .clk(clk_1Hz),
+    .rst(btnC),
+    .en(stopwatch_en),
+    .state(stopwatch_cnt)
+);
+
+
+
 //Timer Module Instance
 //Use "clk_1Hz" as clock signal to stopwatch and timer modules
+
+wire timer_en = mode & run;
+
+timer tmr(
+    .clk(clk_1Hz),
+    .rst(btnC),
+    .en(timer_en),
+    .load[load],
+    .load_value(load_value),
+    .state(tmr_cnt)
+);
+
+
+// Unused LEDs
+assign led[9]   = 1'b0;
+assign led[2:0] = 3'b000;
+
 
 
 endmodule
