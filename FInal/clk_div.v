@@ -12,7 +12,7 @@ module clk_div
 // Number of cycles between pulses
 localparam COUNT_MAX = INPUT_FREQ / (2*OUTPUT_FREQ);
 
-// Ensure width is at least 1
+// Ensure width is at least 1`
 localparam WIDTH = (COUNT_MAX > 1) ? $clog2(COUNT_MAX) : 1;
 
 reg [WIDTH:0] count;
