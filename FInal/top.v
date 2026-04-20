@@ -79,7 +79,7 @@ timer tmr(
     .clk(clk_1Hz),
     .rst(btnC),
     .en(timer_en),
-    .load[load],
+    .load(load),
     .load_value(load_value),
     .state(tmr_cnt)
 );

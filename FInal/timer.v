@@ -26,10 +26,10 @@ module timer(
     always @(*) begin
         if (load)
             d = load_value;
-        else if (en && (q != d'd0))
+        else if (en && (q != 6'd0))
             d = dec_next;
         else
-            d=q;
+            d = q;
     end
 
     dff ff0(.d(d[0]), .clk(clk), .rst(rst), .q(q[0]));
